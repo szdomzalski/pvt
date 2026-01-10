@@ -1,0 +1,27 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reaction Time Test</title>
+    <link rel="stylesheet" href="{% static 'webgui/css/reaction_test.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h1>Reaction Time Test</h1>
+        <div id="instructions">
+            <p>Press the <strong>Start</strong> button to begin. When you see the word <strong>START</strong>, press the <strong>Spacebar</strong> as quickly as possible.</p>
+            <p>The test will last 6–10 minutes. Each attempt will have a random delay (1–9 seconds). Responses faster than 100ms or slower than 450ms are considered fails but will be recorded.</p>
+        </div>
+        <button id="start-btn">Start</button>
+        <div id="test-area" class="hidden">
+            <div id="trigger" class="trigger"></div>
+            <div id="result"></div>
+            <div id="timer"></div>
+        </div>
+        <div id="summary" class="hidden"></div>
+    </div>
+    <script src="{% static 'webgui/js/reaction_test.js' %}"></script>
+</body>
+</html>

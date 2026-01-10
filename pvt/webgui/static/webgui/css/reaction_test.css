@@ -1,0 +1,51 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+.container {
+    max-width: 500px;
+    margin: 40px auto;
+    background: #fff;
+    padding: 30px 40px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    text-align: center;
+}
+button {
+    padding: 12px 32px;
+    font-size: 1.2em;
+    border: none;
+    border-radius: 5px;
+    background: #007bff;
+    color: #fff;
+    cursor: pointer;
+    margin-top: 20px;
+}
+button:disabled {
+    background: #aaa;
+    cursor: not-allowed;
+}
+.trigger {
+    font-size: 2.5em;
+    margin: 40px 0 20px 0;
+    color: #28a745;
+    min-height: 60px;
+}
+#result {
+    font-size: 1.2em;
+    margin: 10px 0;
+}
+#timer {
+    font-size: 1em;
+    color: #888;
+    margin-top: 10px;
+}
+.hidden {
+    display: none;
+}
+#summary {
+    margin-top: 30px;
+    font-size: 1.1em;
+}
