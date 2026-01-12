@@ -21,12 +21,18 @@ function randomDelay() {
 
 function showTrigger() {
     trigger.textContent = 'START';
+    trigger.style.color = '#00e676';
+    trigger.style.display = 'block';
+    trigger.style.fontWeight = 'bold';
+    trigger.style.fontSize = '2.5em';
+    trigger.style.textAlign = 'center';
     startTime = performance.now();
     resultDiv.textContent = '';
 }
 
 function hideTrigger() {
     trigger.textContent = '';
+    trigger.style.display = 'block';
 }
 
 function startTest() {
@@ -34,16 +40,22 @@ function startTest() {
     responses = [];
     testStartTimestamp = Date.now();
     testDuration = minTestDuration + Math.random() * (maxTestDuration - minTestDuration);
-    startBtn.disabled = true;
+    startBtn.style.display = 'none';
+    document.getElementById('instructions').style.display = 'none';
+    document.getElementById('page-title').style.display = 'none';
     testArea.classList.remove('hidden');
     summaryDiv.classList.add('hidden');
+    // Clear all test area content for blank page
+    trigger.textContent = '';
+    resultDiv.textContent = '';
     nextAttempt();
-    updateTimer();
 }
 
 function endTest() {
     testActive = false;
-    startBtn.disabled = false;
+    startBtn.style.display = '';
+    document.getElementById('instructions').style.display = '';
+    document.getElementById('page-title').style.display = '';
     testArea.classList.add('hidden');
     showSummary();
 }
@@ -78,16 +90,6 @@ function handleKeydown(e) {
 
 document.addEventListener('keydown', handleKeydown);
 startBtn.addEventListener('click', startTest);
-
-function updateTimer() {
-    if (!testActive) return;
-    const elapsed = Date.now() - testStartTimestamp;
-    const remaining = Math.max(0, testDuration - elapsed);
-    timerDiv.textContent = `Time left: ${(remaining / 1000).toFixed(0)}s`;
-    if (remaining > 0) {
-        setTimeout(updateTimer, 500);
-    }
-}
 
 function harmonicMean(arr) {
     const validResponses = arr.filter(r => r.valid);
