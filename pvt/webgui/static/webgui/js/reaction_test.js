@@ -20,11 +20,14 @@ function randomDelay() {
 }
 
 function showTrigger() {
-    trigger.textContent = 'START';
+    trigger.textContent = 'READY';
     trigger.style.color = '#00e676';
-    trigger.style.display = 'block';
+    trigger.style.display = 'flex';
+    trigger.style.justifyContent = 'center';
+    trigger.style.alignItems = 'center';
+    trigger.style.height = '80vh';
     trigger.style.fontWeight = 'bold';
-    trigger.style.fontSize = '2.5em';
+    trigger.style.fontSize = '6vw';
     trigger.style.textAlign = 'center';
     startTime = performance.now();
     resultDiv.textContent = '';
@@ -32,7 +35,7 @@ function showTrigger() {
 
 function hideTrigger() {
     trigger.textContent = '';
-    trigger.style.display = 'block';
+    trigger.style.display = 'flex';
 }
 
 function startTest() {
@@ -40,9 +43,7 @@ function startTest() {
     responses = [];
     testStartTimestamp = Date.now();
     testDuration = minTestDuration + Math.random() * (maxTestDuration - minTestDuration);
-    startBtn.style.display = 'none';
-    document.getElementById('instructions').style.display = 'none';
-    document.getElementById('page-title').style.display = 'none';
+    document.getElementById('main-container').style.display = 'none';
     testArea.classList.remove('hidden');
     summaryDiv.classList.add('hidden');
     // Clear all test area content for blank page
@@ -52,10 +53,7 @@ function startTest() {
 }
 
 function endTest() {
-    testActive = false;
-    startBtn.style.display = '';
-    document.getElementById('instructions').style.display = '';
-    document.getElementById('page-title').style.display = '';
+    document.getElementById('main-container').style.display = '';
     testArea.classList.add('hidden');
     showSummary();
 }
