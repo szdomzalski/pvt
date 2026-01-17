@@ -12,15 +12,22 @@
         <h1 id="page-title">Reaction Time Test</h1>
         <div id="instructions">
             <p>Press the <strong>Start</strong> button to begin. When you see the word <strong>READY</strong>, press the <strong>Spacebar</strong> as quickly as possible.</p>
-            <p>The test will last 6–10 minutes. Each attempt will have a random delay (1–9 seconds). Responses faster than 100ms or slower than 450ms are considered fails but will be recorded.</p>
+            <p>The test will last for the selected duration. Each attempt will have a random delay (1–9 seconds). Responses faster than 100ms or slower than 450ms are considered fails but will be recorded.</p>
+        </div>
+        <div id="duration-select" style="margin: 24px 0;">
+            <label><input type="radio" name="duration" value="360" checked> 6 minutes</label>
+            <label style="margin-left: 16px;"><input type="radio" name="duration" value="600"> 10 minutes</label>
+            <label style="margin-left: 16px;">
+                <input type="radio" name="duration" value="custom" id="custom-radio"> Custom:
+                <input type="number" id="custom-duration" min="1" max="120" value="6" style="width: 60px;" disabled> min
+            </label>
         </div>
         <button id="start-btn">Start</button>
     </div>
     <div id="test-area" class="hidden">
-        <div id="trigger" class="trigger"></div>
+        <div id="trigger"></div>
         <div id="result"></div>
     </div>
-    <div id="summary" class="hidden"></div>
     <script src="{% static 'webgui/js/reaction_test.js' %}"></script>
 </body>
 </html>

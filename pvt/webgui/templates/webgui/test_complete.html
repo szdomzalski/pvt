@@ -1,0 +1,24 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Complete</title>
+    <link rel="stylesheet" href="{% static 'webgui/css/reaction_test.css' %}">
+</head>
+<body>
+    <div class="summary-container">
+        <div class="summary-title">Test Complete</div>
+        <div class="summary-metric">
+            <span class="summary-label">Harmonic Mean:</span><br>
+            <span id="harmonic-mean">--</span> ms
+        </div>
+        <div class="summary-metric">
+            <span class="summary-label">Valid Attempts:</span><br>
+            <span id="valid-percentage">--</span>%
+        </div>
+    </div>
+    <script src="{% static 'webgui/js/test_complete.js' %}"></script>
+</body>
+</html>
