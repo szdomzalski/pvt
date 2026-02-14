@@ -19,6 +19,19 @@
     let testStartTimestamp = null; // Absolute time when test starts (Date.now())
     let testDurationMs = 0;
 
+    // === Event Listeners ===
+    if (customDurationRadio && customDurationInput) {
+        for (const radio of document.getElementsByName('duration')) {
+            radio.addEventListener('change', function() {
+                customDurationInput.disabled = !customDurationRadio.checked;
+            });
+        }
+    }
+    document.addEventListener('keydown', handleReactionKey);
+    document.addEventListener('mousedown', handleReactionPointer);
+    document.addEventListener('touchstart', handleReactionPointer);
+    startButton.addEventListener('click', beginTest);
+
         /**
          * Returns a random delay between 1 and 9 seconds (in ms)
          * @returns {number} Delay in milliseconds
@@ -32,18 +45,11 @@
          */
         function showReadyTrigger() {
             triggerDiv.textContent = 'READY';
-            triggerDiv.style.color = '#00e676';
-            triggerDiv.style.display = 'flex';
-            triggerDiv.style.flexDirection = 'column';
-            triggerDiv.style.justifyContent = 'center';
-            triggerDiv.style.alignItems = 'center';
-            triggerDiv.style.height = '80vh';
-            triggerDiv.style.fontWeight = 'bold';
-            triggerDiv.style.fontSize = '6vw';
-            triggerDiv.style.textAlign = 'center';
+            triggerDiv.classList.add('trigger-ready');
             readyTimestamp = Date.now();
             resultDiv.textContent = '';
             resultDiv.style.display = 'block';
+            resultDiv.classList.remove('result-success', 'result-fail');
         }
 
         /**
@@ -51,8 +57,9 @@
          */
         function hideReadyTrigger() {
             triggerDiv.textContent = '';
-            triggerDiv.style.display = 'flex';
+            triggerDiv.classList.remove('trigger-ready');
             resultDiv.textContent = '';
+            resultDiv.classList.remove('result-success', 'result-fail');
         }
 
         /**
@@ -83,19 +90,6 @@
             scheduleNextAttempt();
         }
 
-    // === Event Listeners ===
-    if (customDurationRadio && customDurationInput) {
-        for (const radio of document.getElementsByName('duration')) {
-            radio.addEventListener('change', function() {
-                customDurationInput.disabled = !customDurationRadio.checked;
-            });
-        }
-    }
-
-    document.addEventListener('keydown', handleReactionKey);
-    document.addEventListener('mousedown', handleReactionPointer);
-    document.addEventListener('touchstart', handleReactionPointer);
-    startButton.addEventListener('click', beginTest);
 
         /**
          * Ends the test, stores metrics in localStorage, and redirects to summary page
@@ -141,15 +135,13 @@
                     });
                     if (valid) {
                         resultDiv.textContent = `${reactionDuration.toFixed(0)} ms`;
-                        resultDiv.style.color = '#6cffb2';
+                        resultDiv.classList.add('result-success');
+                        resultDiv.classList.remove('result-fail');
                     } else {
                         resultDiv.textContent = `FAIL: ${reactionDuration.toFixed(0)} ms`;
-                        resultDiv.style.color = '#ff4d4d';
+                        resultDiv.classList.add('result-fail');
+                        resultDiv.classList.remove('result-success');
                     }
-                    resultDiv.style.fontSize = '2.5vw';
-                    resultDiv.style.fontWeight = 'bold';
-                    resultDiv.style.textAlign = 'center';
-                    resultDiv.style.marginTop = '2vh';
                     readyTimestamp = null;
                     setTimeout(scheduleNextAttempt, 500);
                 } else {
@@ -159,11 +151,8 @@
                         valid: false
                     });
                     resultDiv.textContent = `FAIL: Too Early`;
-                    resultDiv.style.color = '#ff4d4d';
-                    resultDiv.style.fontSize = '2.5vw';
-                    resultDiv.style.fontWeight = 'bold';
-                    resultDiv.style.textAlign = 'center';
-                    resultDiv.style.marginTop = '2vh';
+                    resultDiv.classList.add('result-fail');
+                    resultDiv.classList.remove('result-success');
                     setTimeout(scheduleNextAttempt, 500);
                 }
             }
