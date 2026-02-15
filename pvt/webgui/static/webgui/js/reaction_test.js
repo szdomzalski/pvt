@@ -18,6 +18,7 @@
     let attempts = [];
     let testStartTimestamp = null; // Absolute time when test starts (Date.now())
     let testDurationMs = 0;
+    let inputReceived = false; // Debounce flag: only allow first input after READY
 
     // === Event Listeners ===
     if (customDurationRadio && customDurationInput) {
@@ -47,6 +48,7 @@
             triggerDiv.textContent = 'READY';
             triggerDiv.classList.add('trigger-ready');
             readyTimestamp = Date.now();
+            inputReceived = false;
             resultDiv.textContent = '';
             resultDiv.style.display = 'block';
             resultDiv.classList.remove('result-success', 'result-fail');
@@ -58,6 +60,7 @@
         function hideReadyTrigger() {
             triggerDiv.textContent = '';
             triggerDiv.classList.remove('trigger-ready');
+            inputReceived = false;
             resultDiv.textContent = '';
             resultDiv.classList.remove('result-success', 'result-fail');
         }
@@ -124,7 +127,9 @@
          */
         function handleReactionKey(e) {
             if (!isTestActive) return;
+            if (inputReceived) return; // Debounce: ignore subsequent inputs
             if (e.code === 'Space') {
+                inputReceived = true;
                 if (readyTimestamp) {
                     const reactionDuration = Date.now() - readyTimestamp;
                     const valid = reactionDuration >= 100 && reactionDuration <= 450;
