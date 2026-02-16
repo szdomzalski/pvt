@@ -19,6 +19,7 @@
     let testStartTimestamp = null; // Absolute time when test starts (Date.now())
     let testDurationMs = 0;
     let inputReceived = false; // Debounce flag: only allow first input after READY
+    let autoFailTimeout = null; // Timer for auto-fail
 
     // === Event Listeners ===
     if (customDurationRadio && customDurationInput) {
@@ -52,6 +53,20 @@
             resultDiv.textContent = '';
             resultDiv.style.display = 'block';
             resultDiv.classList.remove('result-success', 'result-fail');
+            // Start auto-fail timer
+            autoFailTimeout = setTimeout(() => {
+                if (!inputReceived) {
+                    attempts.push({
+                        timestamp: Date.now(),
+                        duration: 0,
+                        valid: false
+                    });
+                    resultDiv.textContent = 'FAIL: No Response';
+                    resultDiv.classList.add('result-fail');
+                    resultDiv.classList.remove('result-success');
+                    setTimeout(scheduleNextAttempt, 500);
+                }
+            }, 1500);
         }
 
         /**
@@ -61,6 +76,11 @@
             triggerDiv.textContent = '';
             triggerDiv.classList.remove('trigger-ready');
             inputReceived = false;
+            // Clear auto-fail timer if still running
+            if (autoFailTimeout) {
+                clearTimeout(autoFailTimeout);
+                autoFailTimeout = null;
+            }
             resultDiv.textContent = '';
             resultDiv.classList.remove('result-success', 'result-fail');
         }
@@ -130,6 +150,11 @@
             if (inputReceived) return; // Debounce: ignore subsequent inputs
             if (e.code === 'Space') {
                 inputReceived = true;
+                // Clear auto-fail timer
+                if (autoFailTimeout) {
+                    clearTimeout(autoFailTimeout);
+                    autoFailTimeout = null;
+                }
                 if (readyTimestamp) {
                     const reactionDuration = Date.now() - readyTimestamp;
                     const valid = reactionDuration >= 100 && reactionDuration <= 450;
