@@ -61,10 +61,7 @@
                         duration: 0,
                         valid: false
                     });
-                    resultDiv.textContent = 'FAIL: No Response';
-                    resultDiv.classList.add('result-fail');
-                    resultDiv.classList.remove('result-success');
-                    setTimeout(scheduleNextAttempt, 500);
+                    showFailResult('FAIL: No Response');
                 }
             }, 1500);
         }
@@ -168,9 +165,7 @@
                         resultDiv.classList.add('result-success');
                         resultDiv.classList.remove('result-fail');
                     } else {
-                        resultDiv.textContent = `FAIL: ${reactionDuration.toFixed(0)} ms`;
-                        resultDiv.classList.add('result-fail');
-                        resultDiv.classList.remove('result-success');
+                        showFailResult(`FAIL: ${reactionDuration.toFixed(0)} ms`);
                     }
                     readyTimestamp = null;
                     setTimeout(scheduleNextAttempt, 500);
@@ -180,10 +175,7 @@
                         duration: 0,
                         valid: false
                     });
-                    resultDiv.textContent = `FAIL: Too Early`;
-                    resultDiv.classList.add('result-fail');
-                    resultDiv.classList.remove('result-success');
-                    setTimeout(scheduleNextAttempt, 500);
+                    showFailResult('FAIL: Too Early');
                 }
             }
         }
@@ -214,6 +206,17 @@
             const n = validResponses.length;
             const sumReciprocals = validResponses.reduce((sum, a) => sum + 1 / a.duration, 0);
             return n / sumReciprocals;
+        }
+
+        /**
+         * Shows FAIL result and schedules next attempt
+         * @param {string} message - The fail message to display
+         */
+        function showFailResult(message) {
+            resultDiv.textContent = message;
+            resultDiv.classList.add('result-fail');
+            resultDiv.classList.remove('result-success');
+            setTimeout(scheduleNextAttempt, 500);
         }
 
 })();
