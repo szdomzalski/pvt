@@ -21,6 +21,14 @@
     let inputReceived = false; // Debounce flag: only allow first input after READY
     let autoFailTimeout = null; // Timer for auto-fail
 
+    // === Constants ===
+    const REACTION_MIN_MS = 100;
+    const REACTION_MAX_MS = 450;
+    const FAIL_DISPLAY_MS = 500;
+    const AUTO_FAIL_MS = 1500;
+    const RANDOM_DELAY_MIN_MS = 1000;
+    const RANDOM_DELAY_RANGE_MS = 8000;
+
     // === Event Listeners ===
     if (customDurationRadio && customDurationInput) {
         for (const radio of document.getElementsByName('duration')) {
@@ -39,7 +47,7 @@
          * @returns {number} Delay in milliseconds
          */
         function getRandomDelay() {
-            return 1000 + Math.random() * 8000;
+            return RANDOM_DELAY_MIN_MS + Math.random() * RANDOM_DELAY_RANGE_MS;
         }
 
         /**
@@ -63,7 +71,7 @@
                     });
                     showFailResult('FAIL: No Response');
                 }
-            }, 1500);
+            }, AUTO_FAIL_MS);
         }
 
         /**
@@ -154,7 +162,7 @@
                 }
                 if (readyTimestamp) {
                     const reactionDuration = Date.now() - readyTimestamp;
-                    const valid = reactionDuration >= 100 && reactionDuration <= 450;
+                    const valid = reactionDuration >= REACTION_MIN_MS && reactionDuration <= REACTION_MAX_MS;
                     attempts.push({
                         timestamp: Date.now(),
                         duration: reactionDuration,
@@ -168,7 +176,7 @@
                         showFailResult(`FAIL: ${reactionDuration.toFixed(0)} ms`);
                     }
                     readyTimestamp = null;
-                    setTimeout(scheduleNextAttempt, 500);
+                    setTimeout(scheduleNextAttempt, FAIL_DISPLAY_MS);
                 } else {
                     attempts.push({
                         timestamp: Date.now(),
@@ -216,7 +224,7 @@
             resultDiv.textContent = message;
             resultDiv.classList.add('result-fail');
             resultDiv.classList.remove('result-success');
-            setTimeout(scheduleNextAttempt, 500);
+            setTimeout(scheduleNextAttempt, FAIL_DISPLAY_MS);
         }
 
 })();
