@@ -12,6 +12,28 @@
     const customDurationRadio = document.getElementById('custom-radio');
     const customDurationInput = document.getElementById('custom-duration');
 
+    // === Error Handling ===
+    function checkDomElements() {
+        const missing = [];
+        if (!startButton) missing.push('start-btn');
+        if (!testArea) missing.push('test-area');
+        if (!triggerDiv) missing.push('trigger');
+        if (!resultDiv) missing.push('result');
+        if (!customDurationRadio) missing.push('custom-radio');
+        if (!customDurationInput) missing.push('custom-duration');
+        if (missing.length > 0) {
+            console.error('Missing DOM elements:', missing.join(', '));
+            alert('Critical error: Missing DOM elements: ' + missing.join(', '));
+            return false;
+        }
+        return true;
+    }
+
+    if (!checkDomElements()) {
+        // Prevent further execution if critical elements are missing
+        return;
+    }
+
     // === State Variables ===
     let isTestActive = false;
     let readyTimestamp = null; // Absolute time when READY is shown (Date.now())
