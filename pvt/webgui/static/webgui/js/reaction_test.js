@@ -64,189 +64,198 @@
     document.addEventListener('touchstart', handleReactionPointer);
     startButton.addEventListener('click', beginTest);
 
-        /**
-         * Returns a random delay between 1 and 9 seconds (in ms)
-         * @returns {number} Delay in milliseconds
-         */
-        function getRandomDelay() {
-            return RANDOM_DELAY_MIN_MS + Math.random() * RANDOM_DELAY_RANGE_MS;
-        }
+    /**
+     * Returns a random delay between 1 and 9 seconds (in ms)
+     * @returns {number} Delay in milliseconds
+     */
+    function getRandomDelay() {
+        return RANDOM_DELAY_MIN_MS + Math.random() * RANDOM_DELAY_RANGE_MS;
+    }
 
-        /**
-         * Displays the READY trigger and prepares for user reaction
-         */
-        function showReadyTrigger() {
-            triggerDiv.textContent = 'READY';
-            triggerDiv.classList.add('trigger-ready');
-            readyTimestamp = Date.now();
-            inputReceived = false;
-            resultDiv.textContent = '';
-            resultDiv.style.display = 'block';
-            resultDiv.classList.remove('result-success', 'result-fail');
-            // Start auto-fail timer
-            autoFailTimeout = setTimeout(() => {
-                if (!inputReceived) {
-                    attempts.push({
-                        timestamp: Date.now(),
-                        duration: 0,
-                        valid: false
-                    });
-                    showFailResult('FAIL: No Response');
+    // === Accessibility Improvements: Keyboard Only ===
+    triggerDiv.setAttribute('tabindex', '-1');
+    resultDiv.setAttribute('tabindex', '-1');
+    testArea.setAttribute('tabindex', '-1');
+
+    /**
+     * Displays the READY trigger and prepares for user reaction
+     */
+    function showReadyTrigger() {
+        triggerDiv.textContent = 'READY';
+        triggerDiv.classList.add('trigger-ready');
+        readyTimestamp = Date.now();
+        inputReceived = false;
+        resultDiv.textContent = '';
+        resultDiv.style.display = 'block';
+        resultDiv.classList.remove('result-success', 'result-fail');
+        // Accessibility: focus trigger
+        triggerDiv.focus();
+        // Start auto-fail timer
+        autoFailTimeout = setTimeout(() => {
+            if (!inputReceived) {
+                attempts.push({
+                    timestamp: Date.now(),
+                    duration: 0,
+                    valid: false
+                });
+                showFailResult('FAIL: No Response');
+            }
+        }, AUTO_FAIL_MS);
+    }
+
+    /**
+     * Hides the READY trigger and clears the result
+     */
+    function hideReadyTrigger() {
+        triggerDiv.textContent = '';
+        triggerDiv.classList.remove('trigger-ready');
+        inputReceived = false;
+        // Clear auto-fail timer if still running
+        if (autoFailTimeout) {
+            clearTimeout(autoFailTimeout);
+            autoFailTimeout = null;
+        }
+        resultDiv.textContent = '';
+        resultDiv.classList.remove('result-success', 'result-fail');
+    }
+
+    /**
+     * Starts the test, sets the duration, and initializes state
+     */
+    function beginTest() {
+        isTestActive = true;
+        attempts = [];
+        testStartTimestamp = Date.now();
+        // Get selected duration
+        let durationMin = 6;
+        const radios = document.getElementsByName('duration');
+        for (const radio of radios) {
+            if (radio.checked) {
+                if (radio.value === 'custom') {
+                    const customVal = parseInt(document.getElementById('custom-duration').value, 10);
+                    if (!isNaN(customVal) && customVal > 0) durationMin = customVal;
+                } else {
+                    durationMin = parseInt(radio.value, 10) / 60;
                 }
-            }, AUTO_FAIL_MS);
+            }
         }
+        testDurationMs = durationMin * 60 * 1000;
+        document.getElementById('main-container').style.display = 'none';
+        testArea.classList.remove('hidden');
+        triggerDiv.textContent = '';
+        resultDiv.textContent = '';
+        scheduleNextAttempt();
+    }
 
-        /**
-         * Hides the READY trigger and clears the result
-         */
-        function hideReadyTrigger() {
-            triggerDiv.textContent = '';
-            triggerDiv.classList.remove('trigger-ready');
-            inputReceived = false;
-            // Clear auto-fail timer if still running
+
+    /**
+     * Ends the test, stores metrics in localStorage, and redirects to summary page
+     */
+    function finishTest() {
+        const mean = calculateHarmonicMean(attempts);
+        const validCount = attempts.filter(a => a.valid).length;
+        const validPercentage = attempts.length > 0 ? ((validCount / attempts.length) * 100).toFixed(1) : '0.0';
+        localStorage.setItem('harmonicMean', mean ? mean.toFixed(1) : '--');
+        localStorage.setItem('validPercentage', validPercentage);
+        window.location.href = '/test-complete/';
+    }
+
+    /**
+     * Schedules the next attempt or ends the test if duration elapsed
+     */
+    function scheduleNextAttempt() {
+        hideReadyTrigger();
+        if (!isTestActive) return;
+        if (Date.now() - testStartTimestamp >= testDurationMs) {
+            finishTest();
+            return;
+        }
+        setTimeout(() => {
+            showReadyTrigger();
+        }, getRandomDelay());
+    }
+
+    /**
+     * Handles keyboard (spacebar) reactions
+     * @param {KeyboardEvent} e
+     */
+    function handleReactionKey(e) {
+        if (!isTestActive) return;
+        if (inputReceived) return; // Debounce: ignore subsequent inputs
+        if (e.code === 'Space') {
+            inputReceived = true;
+            // Clear auto-fail timer
             if (autoFailTimeout) {
                 clearTimeout(autoFailTimeout);
                 autoFailTimeout = null;
             }
-            resultDiv.textContent = '';
-            resultDiv.classList.remove('result-success', 'result-fail');
-        }
-
-        /**
-         * Starts the test, sets the duration, and initializes state
-         */
-        function beginTest() {
-            isTestActive = true;
-            attempts = [];
-            testStartTimestamp = Date.now();
-            // Get selected duration
-            let durationMin = 6;
-            const radios = document.getElementsByName('duration');
-            for (const radio of radios) {
-                if (radio.checked) {
-                    if (radio.value === 'custom') {
-                        const customVal = parseInt(document.getElementById('custom-duration').value, 10);
-                        if (!isNaN(customVal) && customVal > 0) durationMin = customVal;
-                    } else {
-                        durationMin = parseInt(radio.value, 10) / 60;
-                    }
-                }
-            }
-            testDurationMs = durationMin * 60 * 1000;
-            document.getElementById('main-container').style.display = 'none';
-            testArea.classList.remove('hidden');
-            triggerDiv.textContent = '';
-            resultDiv.textContent = '';
-            scheduleNextAttempt();
-        }
-
-
-        /**
-         * Ends the test, stores metrics in localStorage, and redirects to summary page
-         */
-        function finishTest() {
-            const mean = calculateHarmonicMean(attempts);
-            const validCount = attempts.filter(a => a.valid).length;
-            const validPercentage = attempts.length > 0 ? ((validCount / attempts.length) * 100).toFixed(1) : '0.0';
-            localStorage.setItem('harmonicMean', mean ? mean.toFixed(1) : '--');
-            localStorage.setItem('validPercentage', validPercentage);
-            window.location.href = '/test-complete/';
-        }
-
-        /**
-         * Schedules the next attempt or ends the test if duration elapsed
-         */
-        function scheduleNextAttempt() {
-            hideReadyTrigger();
-            if (!isTestActive) return;
-            if (Date.now() - testStartTimestamp >= testDurationMs) {
-                finishTest();
-                return;
-            }
-            setTimeout(() => {
-                showReadyTrigger();
-            }, getRandomDelay());
-        }
-
-        /**
-         * Handles keyboard (spacebar) reactions
-         * @param {KeyboardEvent} e
-         */
-        function handleReactionKey(e) {
-            if (!isTestActive) return;
-            if (inputReceived) return; // Debounce: ignore subsequent inputs
-            if (e.code === 'Space') {
-                inputReceived = true;
-                // Clear auto-fail timer
-                if (autoFailTimeout) {
-                    clearTimeout(autoFailTimeout);
-                    autoFailTimeout = null;
-                }
-                if (readyTimestamp) {
-                    const reactionDuration = Date.now() - readyTimestamp;
-                    const valid = reactionDuration >= REACTION_MIN_MS && reactionDuration <= REACTION_MAX_MS;
-                    attempts.push({
-                        timestamp: Date.now(),
-                        duration: reactionDuration,
-                        valid
-                    });
-                    if (valid) {
-                        resultDiv.textContent = `${reactionDuration.toFixed(0)} ms`;
-                        resultDiv.classList.add('result-success');
-                        resultDiv.classList.remove('result-fail');
-                    } else {
-                        showFailResult(`FAIL: ${reactionDuration.toFixed(0)} ms`);
-                    }
-                    readyTimestamp = null;
-                    setTimeout(scheduleNextAttempt, FAIL_DISPLAY_MS);
+            if (readyTimestamp) {
+                const reactionDuration = Date.now() - readyTimestamp;
+                const valid = reactionDuration >= REACTION_MIN_MS && reactionDuration <= REACTION_MAX_MS;
+                attempts.push({
+                    timestamp: Date.now(),
+                    duration: reactionDuration,
+                    valid
+                });
+                if (valid) {
+                    resultDiv.textContent = `${reactionDuration.toFixed(0)} ms`;
+                    resultDiv.classList.add('result-success');
+                    resultDiv.classList.remove('result-fail');
                 } else {
-                    attempts.push({
-                        timestamp: Date.now(),
-                        duration: 0,
-                        valid: false
-                    });
-                    showFailResult('FAIL: Too Early');
+                    showFailResult(`FAIL: ${reactionDuration.toFixed(0)} ms`);
                 }
+                readyTimestamp = null;
+                setTimeout(scheduleNextAttempt, FAIL_DISPLAY_MS);
+            } else {
+                attempts.push({
+                    timestamp: Date.now(),
+                    duration: 0,
+                    valid: false
+                });
+                showFailResult('FAIL: Too Early');
             }
         }
+    }
 
-        /**
-         * Handles mouse/touch reactions as spacebar
-         * @param {MouseEvent|TouchEvent} e
-         */
-        function handleReactionPointer(e) {
-            if (e.type === 'mousedown' && e.button !== 0) return;
-            handleReactionKey({ code: 'Space' });
-        }
+    /**
+     * Handles mouse/touch reactions as spacebar
+     * @param {MouseEvent|TouchEvent} e
+     */
+    function handleReactionPointer(e) {
+        if (e.type === 'mousedown' && e.button !== 0) return;
+        handleReactionKey({ code: 'Space' });
+    }
 
-        // Event listeners for user input
-        document.addEventListener('keydown', handleReactionKey);
-        document.addEventListener('mousedown', handleReactionPointer);
-        document.addEventListener('touchstart', handleReactionPointer);
-        startButton.addEventListener('click', beginTest);
+    // Event listeners for user input
+    document.addEventListener('keydown', handleReactionKey);
+    document.addEventListener('mousedown', handleReactionPointer);
+    document.addEventListener('touchstart', handleReactionPointer);
+    startButton.addEventListener('click', beginTest);
 
-        /**
-         * Calculates the harmonic mean of valid attempt durations
-         * @param {Array<{duration: number, valid: boolean}>} arr
-         * @returns {number}
-         */
-        function calculateHarmonicMean(arr) {
-            const validResponses = arr.filter(a => a.valid);
-            if (validResponses.length === 0) return 0;
-            const n = validResponses.length;
-            const sumReciprocals = validResponses.reduce((sum, a) => sum + 1 / a.duration, 0);
-            return n / sumReciprocals;
-        }
+    /**
+     * Calculates the harmonic mean of valid attempt durations
+     * @param {Array<{duration: number, valid: boolean}>} arr
+     * @returns {number}
+     */
+    function calculateHarmonicMean(arr) {
+        const validResponses = arr.filter(a => a.valid);
+        if (validResponses.length === 0) return 0;
+        const n = validResponses.length;
+        const sumReciprocals = validResponses.reduce((sum, a) => sum + 1 / a.duration, 0);
+        return n / sumReciprocals;
+    }
 
-        /**
-         * Shows FAIL result and schedules next attempt
-         * @param {string} message - The fail message to display
-         */
-        function showFailResult(message) {
-            resultDiv.textContent = message;
-            resultDiv.classList.add('result-fail');
-            resultDiv.classList.remove('result-success');
-            setTimeout(scheduleNextAttempt, FAIL_DISPLAY_MS);
-        }
+    /**
+     * Shows FAIL result and schedules next attempt
+     * @param {string} message - The fail message to display
+     */
+    function showFailResult(message) {
+        resultDiv.textContent = message;
+        resultDiv.classList.add('result-fail');
+        resultDiv.classList.remove('result-success');
+        // Accessibility: focus result
+        resultDiv.focus();
+        setTimeout(scheduleNextAttempt, FAIL_DISPLAY_MS);
+    }
 
 })();
