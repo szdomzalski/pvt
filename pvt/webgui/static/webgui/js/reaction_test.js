@@ -82,14 +82,15 @@
      */
     function showReadyTrigger() {
         triggerDiv.textContent = 'READY';
-        triggerDiv.classList.add('trigger-ready');
+        triggerDiv.classList.remove('d-none');
         readyTimestamp = Date.now();
         inputReceived = false;
         resultDiv.textContent = '';
-        resultDiv.style.display = 'block';
-        resultDiv.classList.remove('result-success', 'result-fail');
+        // resultDiv.style.display = 'block';
+        // resultDiv.classList.remove('text-success', 'text-danger');
+        resultDiv.classList.add('d-none')
         // Accessibility: focus trigger
-        triggerDiv.focus();
+        // triggerDiv.focus();
         // Start auto-fail timer
         autoFailTimeout = setTimeout(() => {
             if (!inputReceived) {
@@ -107,8 +108,8 @@
      * Hides the READY trigger and clears the result
      */
     function hideReadyTrigger() {
-        triggerDiv.textContent = '';
-        triggerDiv.classList.remove('trigger-ready');
+        triggerDiv.textContent = '';  // It looks like there a problem with these classes on the page (bad styling)
+        triggerDiv.classList.add('d-none');
         inputReceived = false;
         // Clear auto-fail timer if still running
         if (autoFailTimeout) {
@@ -116,7 +117,8 @@
             autoFailTimeout = null;
         }
         resultDiv.textContent = '';
-        resultDiv.classList.remove('result-success', 'result-fail');
+        // resultDiv.classList.remove('text-success', 'text-danger');
+        resultDiv.classList.add('d-none');
     }
 
     /**
@@ -140,8 +142,8 @@
             }
         }
         testDurationMs = durationMin * 60 * 1000;
-        document.getElementById('main-container').style.display = 'none';
-        testArea.classList.remove('hidden');
+        document.getElementById('main-container').classList.add('d-none');
+        testArea.classList.remove('d-none');
         triggerDiv.textContent = '';
         resultDiv.textContent = '';
         scheduleNextAttempt();
@@ -199,8 +201,8 @@
                 });
                 if (valid) {
                     resultDiv.textContent = `${reactionDuration.toFixed(0)} ms`;
-                    resultDiv.classList.add('result-success');
-                    resultDiv.classList.remove('result-fail');
+                    resultDiv.classList.add('text-success');
+                    resultDiv.classList.remove('text-danger', 'd-none');
                 } else {
                     showFailResult(`FAIL: ${reactionDuration.toFixed(0)} ms`);
                 }
@@ -251,10 +253,11 @@
      */
     function showFailResult(message) {
         resultDiv.textContent = message;
-        resultDiv.classList.add('result-fail');
-        resultDiv.classList.remove('result-success');
+        resultDiv.classList.add('text-danger');
+        resultDiv.classList.remove('text-success', 'd-none');
         // Accessibility: focus result
-        resultDiv.focus();
+        // resultDiv.focus();  # Focus causes some problems with white frame when using spacebar
+        // TODO: there is a problem with logic as well - sometimes fail messages appear and are counted as fails however there should be no fail
         setTimeout(scheduleNextAttempt, FAIL_DISPLAY_MS);
     }
 

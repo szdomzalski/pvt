@@ -1,24 +1,25 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Test Complete</title>
-    <link rel="stylesheet" href="{% static 'webgui/css/reaction_test.css' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
 </head>
-<body>
-    <div class="summary-container">
-        <div class="summary-title">Test Complete</div>
-        <div class="summary-metric">
-            <span class="summary-label">Harmonic Mean:</span><br>
+<body class="bg-dark text-light">
+    <div class="container mx-auto mt-5 p-4 pb-3 rounded shadow bg-dark">
+        <div class="fs-1 text-success mb-4">Test Complete</div>
+        <div class="fs-4 my-3">
+            <span class="text-secondary fs-6">Harmonic Mean:</span><br>
             <span id="harmonic-mean">--</span> ms
         </div>
-        <div class="summary-metric">
-            <span class="summary-label">Valid Attempts:</span><br>
+        <div class="fs-4 my-3">
+            <span class="text-secondary fs-6">Valid Attempts:</span><br>
             <span id="valid-percentage">--</span>%
         </div>
     </div>
     <script src="{% static 'webgui/js/test_complete.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 </body>
 </html>
