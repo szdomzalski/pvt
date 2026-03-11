@@ -12,37 +12,15 @@
     const customDurationRadio = document.getElementById('custom-radio');
     const customDurationInput = document.getElementById('custom-duration');
 
-    // === Error Handling ===
-    function checkDomElements() {
-        const missing = [];
-        if (!startButton) missing.push('start-btn');
-        if (!testArea) missing.push('test-area');
-        if (!triggerDiv) missing.push('trigger');
-        if (!resultDiv) missing.push('result');
-        if (!customDurationRadio) missing.push('custom-radio');
-        if (!customDurationInput) missing.push('custom-duration');
-        if (missing.length > 0) {
-            console.error('Missing DOM elements:', missing.join(', '));
-            alert('Critical error: Missing DOM elements: ' + missing.join(', '));
-            return false;
-        }
-        return true;
-    }
-
-    if (!checkDomElements()) {
-        // Prevent further execution if critical elements are missing
-        return;
-    }
-
     // === State Variables ===
     let isTestActive = false;
-    let readyTimestamp = null; // Absolute time when READY is shown (Date.now())
+    let readyTimestamp = null;
     let attempts = [];
-    let testStartTimestamp = null; // Absolute time when test starts (Date.now())
+    let testStartTimestamp = null;
     let testDurationMs = 0;
-    let inputReceived = false; // Debounce flag: only allow first input after READY
-    let autoFailTimeout = null; // Timer for auto-fail
-    let delayTimeout = null; // Timer for random delay before showing READY
+    let inputReceived = false;
+    let autoFailTimeout = null;
+    let delayTimeout = null;
 
     // === Constants ===
     const REACTION_MIN_MS = 100;
@@ -65,12 +43,45 @@
     document.addEventListener('touchstart', handleReactionPointer);
     startButton.addEventListener('click', beginTest);
 
+    // === Timer Helpers ===
+
+    function clearAutoFail() {
+        if (autoFailTimeout) {
+            clearTimeout(autoFailTimeout);
+            autoFailTimeout = null;
+        }
+    }
+
+    function clearDelay() {
+        if (delayTimeout) {
+            clearTimeout(delayTimeout);
+            delayTimeout = null;
+        }
+    }
+
     /**
      * Returns a random delay between 1 and 9 seconds (in ms)
-     * @returns {number} Delay in milliseconds
+     * @returns {number}
      */
     function getRandomDelay() {
         return RANDOM_DELAY_MIN_MS + Math.random() * RANDOM_DELAY_RANGE_MS;
+    }
+
+    /**
+     * Displays a result message and schedules the next attempt
+     * @param {string} message
+     * @param {boolean} isSuccess
+     */
+    function showResult(message, isSuccess) {
+        resultDiv.textContent = message;
+        if (isSuccess) {
+            resultDiv.classList.add('text-success');
+            resultDiv.classList.remove('text-danger', 'd-none');
+        } else {
+            resultDiv.classList.add('text-danger');
+            resultDiv.classList.remove('text-success', 'd-none');
+        }
+        setTimeout(scheduleNextAttempt, FAIL_DISPLAY_MS);
     }
 
     /**
@@ -79,11 +90,10 @@
     function showReadyTrigger() {
         triggerDiv.textContent = 'READY';
         triggerDiv.classList.remove('d-none');
-        readyTimestamp = Date.now();
+        readyTimestamp = performance.now();
         inputReceived = false;
         resultDiv.textContent = '';
         resultDiv.classList.add('d-none');
-        // Start auto-fail timer
         autoFailTimeout = setTimeout(() => {
             if (!inputReceived) {
                 inputReceived = true;
@@ -93,7 +103,7 @@
                     duration: 0,
                     valid: false
                 });
-                showFailResult('FAIL: No Response');
+                showResult('FAIL: No Response', false);
             }
         }, AUTO_FAIL_MS);
     }
@@ -106,42 +116,41 @@
         triggerDiv.classList.add('d-none');
         inputReceived = false;
         readyTimestamp = null;
-        // Clear auto-fail timer if still running
-        if (autoFailTimeout) {
-            clearTimeout(autoFailTimeout);
-            autoFailTimeout = null;
-        }
-        // Clear pending delay timer
-        if (delayTimeout) {
-            clearTimeout(delayTimeout);
-            delayTimeout = null;
-        }
+        clearAutoFail();
+        clearDelay();
         resultDiv.textContent = '';
         resultDiv.classList.remove('text-success', 'text-danger');
         resultDiv.classList.add('d-none');
     }
 
     /**
-     * Starts the test, sets the duration, and initializes state
+     * Returns the selected test duration in milliseconds
+     * @returns {number}
      */
-    function beginTest() {
-        isTestActive = true;
-        attempts = [];
-        testStartTimestamp = Date.now();
-        // Get selected duration
+    function getSelectedDurationMs() {
         let durationMin = 6;
         const radios = document.getElementsByName('duration');
         for (const radio of radios) {
             if (radio.checked) {
                 if (radio.value === 'custom') {
-                    const customVal = parseInt(document.getElementById('custom-duration').value, 10);
+                    const customVal = parseInt(customDurationInput.value, 10);
                     if (!isNaN(customVal) && customVal > 0) durationMin = customVal;
                 } else {
                     durationMin = parseInt(radio.value, 10) / 60;
                 }
             }
         }
-        testDurationMs = durationMin * 60 * 1000;
+        return durationMin * 60 * 1000;
+    }
+
+    /**
+     * Starts the test
+     */
+    function beginTest() {
+        isTestActive = true;
+        attempts = [];
+        testStartTimestamp = Date.now();
+        testDurationMs = getSelectedDurationMs();
         document.getElementById('main-container').classList.add('d-none');
         testArea.classList.remove('d-none');
         triggerDiv.textContent = '';
@@ -184,17 +193,13 @@
      */
     function handleReactionKey(e) {
         if (!isTestActive) return;
-        if (inputReceived) return; // Debounce: ignore subsequent inputs
+        if (inputReceived) return;
         if (e.code === 'Space') {
             if (e.preventDefault) e.preventDefault();
             inputReceived = true;
-            // Clear auto-fail timer
-            if (autoFailTimeout) {
-                clearTimeout(autoFailTimeout);
-                autoFailTimeout = null;
-            }
+            clearAutoFail();
             if (readyTimestamp) {
-                const reactionDuration = Date.now() - readyTimestamp;
+                const reactionDuration = performance.now() - readyTimestamp;
                 const valid = reactionDuration >= REACTION_MIN_MS && reactionDuration <= REACTION_MAX_MS;
                 attempts.push({
                     timestamp: Date.now(),
@@ -203,25 +208,18 @@
                 });
                 readyTimestamp = null;
                 if (valid) {
-                    resultDiv.textContent = `${reactionDuration.toFixed(0)} ms`;
-                    resultDiv.classList.add('text-success');
-                    resultDiv.classList.remove('text-danger', 'd-none');
-                    setTimeout(scheduleNextAttempt, FAIL_DISPLAY_MS);
+                    showResult(`${reactionDuration.toFixed(0)} ms`, true);
                 } else {
-                    showFailResult(`FAIL: ${reactionDuration.toFixed(0)} ms`);
+                    showResult(`FAIL: ${reactionDuration.toFixed(0)} ms`, false);
                 }
             } else {
-                // Too early: cancel the pending delay timer so it won't fire a duplicate trigger
-                if (delayTimeout) {
-                    clearTimeout(delayTimeout);
-                    delayTimeout = null;
-                }
+                clearDelay();
                 attempts.push({
                     timestamp: Date.now(),
                     duration: 0,
                     valid: false
                 });
-                showFailResult('FAIL: Too Early');
+                showResult('FAIL: Too Early', false);
             }
         }
     }
@@ -246,17 +244,6 @@
         const n = validResponses.length;
         const sumReciprocals = validResponses.reduce((sum, a) => sum + 1 / a.duration, 0);
         return n / sumReciprocals;
-    }
-
-    /**
-     * Shows FAIL result and schedules next attempt
-     * @param {string} message - The fail message to display
-     */
-    function showFailResult(message) {
-        resultDiv.textContent = message;
-        resultDiv.classList.add('text-danger');
-        resultDiv.classList.remove('text-success', 'd-none');
-        setTimeout(scheduleNextAttempt, FAIL_DISPLAY_MS);
     }
 
 })();
