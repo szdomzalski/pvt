@@ -42,6 +42,7 @@
     let testDurationMs = 0;
     let inputReceived = false; // Debounce flag: only allow first input after READY
     let autoFailTimeout = null; // Timer for auto-fail
+    let delayTimeout = null; // Timer for random delay before showing READY
 
     // === Constants ===
     const REACTION_MIN_MS = 100;
@@ -72,11 +73,6 @@
         return RANDOM_DELAY_MIN_MS + Math.random() * RANDOM_DELAY_RANGE_MS;
     }
 
-    // === Accessibility Improvements: Keyboard Only ===
-    triggerDiv.setAttribute('tabindex', '-1');
-    resultDiv.setAttribute('tabindex', '-1');
-    testArea.setAttribute('tabindex', '-1');
-
     /**
      * Displays the READY trigger and prepares for user reaction
      */
@@ -86,14 +82,12 @@
         readyTimestamp = Date.now();
         inputReceived = false;
         resultDiv.textContent = '';
-        // resultDiv.style.display = 'block';
-        // resultDiv.classList.remove('text-success', 'text-danger');
-        resultDiv.classList.add('d-none')
-        // Accessibility: focus trigger
-        // triggerDiv.focus();
+        resultDiv.classList.add('d-none');
         // Start auto-fail timer
         autoFailTimeout = setTimeout(() => {
             if (!inputReceived) {
+                inputReceived = true;
+                readyTimestamp = null;
                 attempts.push({
                     timestamp: Date.now(),
                     duration: 0,
@@ -108,16 +102,22 @@
      * Hides the READY trigger and clears the result
      */
     function hideReadyTrigger() {
-        triggerDiv.textContent = '';  // It looks like there a problem with these classes on the page (bad styling)
+        triggerDiv.textContent = '';
         triggerDiv.classList.add('d-none');
         inputReceived = false;
+        readyTimestamp = null;
         // Clear auto-fail timer if still running
         if (autoFailTimeout) {
             clearTimeout(autoFailTimeout);
             autoFailTimeout = null;
         }
+        // Clear pending delay timer
+        if (delayTimeout) {
+            clearTimeout(delayTimeout);
+            delayTimeout = null;
+        }
         resultDiv.textContent = '';
-        // resultDiv.classList.remove('text-success', 'text-danger');
+        resultDiv.classList.remove('text-success', 'text-danger');
         resultDiv.classList.add('d-none');
     }
 
@@ -149,11 +149,11 @@
         scheduleNextAttempt();
     }
 
-
     /**
      * Ends the test, stores metrics in localStorage, and redirects to summary page
      */
     function finishTest() {
+        isTestActive = false;
         const mean = calculateHarmonicMean(attempts);
         const validCount = attempts.filter(a => a.valid).length;
         const validPercentage = attempts.length > 0 ? ((validCount / attempts.length) * 100).toFixed(1) : '0.0';
@@ -172,7 +172,8 @@
             finishTest();
             return;
         }
-        setTimeout(() => {
+        delayTimeout = setTimeout(() => {
+            delayTimeout = null;
             showReadyTrigger();
         }, getRandomDelay());
     }
@@ -185,6 +186,7 @@
         if (!isTestActive) return;
         if (inputReceived) return; // Debounce: ignore subsequent inputs
         if (e.code === 'Space') {
+            if (e.preventDefault) e.preventDefault();
             inputReceived = true;
             // Clear auto-fail timer
             if (autoFailTimeout) {
@@ -199,16 +201,21 @@
                     duration: reactionDuration,
                     valid
                 });
+                readyTimestamp = null;
                 if (valid) {
                     resultDiv.textContent = `${reactionDuration.toFixed(0)} ms`;
                     resultDiv.classList.add('text-success');
                     resultDiv.classList.remove('text-danger', 'd-none');
+                    setTimeout(scheduleNextAttempt, FAIL_DISPLAY_MS);
                 } else {
                     showFailResult(`FAIL: ${reactionDuration.toFixed(0)} ms`);
                 }
-                readyTimestamp = null;
-                setTimeout(scheduleNextAttempt, FAIL_DISPLAY_MS);
             } else {
+                // Too early: cancel the pending delay timer so it won't fire a duplicate trigger
+                if (delayTimeout) {
+                    clearTimeout(delayTimeout);
+                    delayTimeout = null;
+                }
                 attempts.push({
                     timestamp: Date.now(),
                     duration: 0,
@@ -227,12 +234,6 @@
         if (e.type === 'mousedown' && e.button !== 0) return;
         handleReactionKey({ code: 'Space' });
     }
-
-    // Event listeners for user input
-    document.addEventListener('keydown', handleReactionKey);
-    document.addEventListener('mousedown', handleReactionPointer);
-    document.addEventListener('touchstart', handleReactionPointer);
-    startButton.addEventListener('click', beginTest);
 
     /**
      * Calculates the harmonic mean of valid attempt durations
@@ -255,9 +256,6 @@
         resultDiv.textContent = message;
         resultDiv.classList.add('text-danger');
         resultDiv.classList.remove('text-success', 'd-none');
-        // Accessibility: focus result
-        // resultDiv.focus();  # Focus causes some problems with white frame when using spacebar
-        // TODO: there is a problem with logic as well - sometimes fail messages appear and are counted as fails however there should be no fail
         setTimeout(scheduleNextAttempt, FAIL_DISPLAY_MS);
     }
 
