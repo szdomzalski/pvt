@@ -3,6 +3,7 @@ db.sqlite3
 __pycache__/
 *.pyc
 notes.md
+DEVELOPMENT_PLAN.md
 *.diff
 *.patch
 *.log
