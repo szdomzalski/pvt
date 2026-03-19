@@ -7,3 +7,4 @@ DEVELOPMENT_PLAN.md
 *.diff
 *.patch
 *.log
+.env
